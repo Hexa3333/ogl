@@ -3,6 +3,7 @@
 
 #include <GL/gl.h>
 
+#include <cmath>
 #include <iostream>
 #include <cstdlib>
 #include <fstream>
@@ -59,18 +60,10 @@ int main(void)
 
 
     GLfloat vertices[] = {
-        // first tri
-        0.5f,  0.5f,  0.0f, // top right
-        0.5f, -0.5f,  0.0f, // bot right
-       -0.5f,  0.5f,  0.0f, // top left
-       -0.5f, -0.5f,  0.0f, // bot left
+        0.0f,  0.5f,  0.0f, 1.0f, 0.0f, 0.0f, // top
+        0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 0.0f, // bot right
+       -0.5f, -0.5f,  0.0f, 0.0f, 0.0f, 1.0f  // bot left
     };
-
-    GLuint indices[] = {
-        0, 1, 2, // first tri
-        2, 3, 1  // second tri
-    };
-
 
     GLuint vao;
     glGenVertexArrays(1, &vao);
@@ -81,13 +74,10 @@ int main(void)
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    GLuint ebo;
-    glGenBuffers(1, &ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
 
     glBindVertexArray(0);
 
@@ -146,19 +136,21 @@ int main(void)
             std::cerr << "Shader linking error: " << info_log << "\n";
         }
     }
-
     glDeleteShader(vertex_shader);
     glDeleteShader(fragment_shader);
-
-    glUseProgram(shader_program);
 
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.5f, 0, 0, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        float time_value = glfwGetTime();
+        float green_value = (std::sin(time_value) / 2.0f) + 0.5f;
+
         glUseProgram(shader_program);
+        glUniform3f(glGetUniformLocation(shader_program, "uni_color"),
+                0.0f, 0.0f, 0.0f);
         glBindVertexArray(vao);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
