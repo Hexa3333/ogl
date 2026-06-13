@@ -7,10 +7,18 @@
 #include <iostream>
 #include <cstdlib>
 
+#include "glm/ext/matrix_clip_space.hpp"
+#include "glm/ext/matrix_transform.hpp"
 #include "shader.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+
+#define FLOAT_FROM_256(x) (x / 255.0f)
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 constexpr int initial_window_width = 800;
 constexpr int initial_window_height = 600;
@@ -60,18 +68,50 @@ int main(void)
     glViewport(0, 0, initial_window_width, initial_window_height);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetKeyCallback(window, key_callback);
-
+    glEnable(GL_DEPTH_TEST);
 
     GLfloat vertices[] = {
-//       v1     v2    v3      r     g     b      s     t
-        0.5f,  0.5f, 0.0f,   0.0f, 0.5f, 0.0f,  1.0f, 1.0f, // top right
-       -0.5f,  0.5f, 0.0f,   0.0f, 0.5f, 0.0f,  0.0f, 1.0f, // top left
-        0.5f, -0.5f, 0.0f,   0.0f, 0.5f, 0.0f,  1.0f, 0.0f, // bot right
-       -0.5f, -0.5f, 0.0f,   0.0f, 0.5f, 0.0f,  0.0f, 0.0f, // bot left
-    };
-    GLuint indices[] = {
-        0, 1, 2,
-        2, 1, 3
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
 
     GLuint vao;
@@ -83,17 +123,10 @@ int main(void)
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    GLuint ebo;
-    glGenBuffers(1, &ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
-    glEnableVertexAttribArray(2);
 
     glBindVertexArray(0);
 
@@ -112,8 +145,9 @@ int main(void)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+    stbi_set_flip_vertically_on_load(true);
     int width, height, nrChannels;
-    unsigned char *data = stbi_load("textures/wall.jpg", &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load("textures/shinji.jpg", &width, &height, &nrChannels, 0);
     if (!data) {
         std::cerr << "stbi failed.\n";
         return EXIT_FAILURE;
@@ -124,20 +158,46 @@ int main(void)
     stbi_image_free(data);
     glBindTexture(GL_TEXTURE_2D, 0);
 
+    glm::vec3 cube_positions[] = {
+        glm::vec3( 0.0f,  0.0f,  0.0f), 
+        glm::vec3( 2.0f,  5.0f, -15.0f), 
+        glm::vec3(-1.5f, -2.2f, -2.5f),  
+        glm::vec3(-3.8f, -2.0f, -12.3f),  
+        glm::vec3( 2.4f, -0.4f, -3.5f),  
+        glm::vec3(-1.7f,  3.0f, -7.5f),  
+        glm::vec3( 1.3f, -2.0f, -2.5f),  
+        glm::vec3( 1.5f,  2.0f, -2.5f), 
+        glm::vec3( 1.5f,  0.2f, -1.5f), 
+        glm::vec3(-1.3f,  1.0f, -1.5f) 
+    };
+
+    //glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -3.0f));
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)(initial_window_width) / (float)(initial_window_width), 0.1f, 100.0f);
+
     while (!glfwWindowShouldClose(window)) {
-        glClearColor(0.5f, 0, 0, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClearColor(FLOAT_FROM_256(101), FLOAT_FROM_256(96), FLOAT_FROM_256(128), 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         float time_value = glfwGetTime();
         float green_value = (std::sin(time_value) / 2.0f) + 0.5f;
 
         glUseProgram(shader.program);
-        glUniform3f(glGetUniformLocation(shader.program, "uni_color"),
-                0.0f, 0.0f, 0.0f);
+
+        glUniformMatrix4fv(glGetUniformLocation(shader.program, "view"),
+                1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(shader.program, "projection"),
+                1, GL_FALSE, glm::value_ptr(projection));
+
         glBindVertexArray(vao);
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        //glDrawArrays(GL_TRIANGLES, 0, 3);
+        for (int i = 0; i < 10; ++i) {
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), cube_positions[i]);
+            glUniformMatrix4fv(glGetUniformLocation(shader.program, "model"),
+                    1, GL_FALSE, glm::value_ptr(model));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
