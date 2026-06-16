@@ -3,12 +3,12 @@
 
 #include <GL/gl.h>
 
-#include <cmath>
 #include <iostream>
 #include <cstdlib>
 
 #include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/matrix_transform.hpp"
+#include "glm/geometric.hpp"
 #include "shader.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -45,6 +45,39 @@ void key_callback(struct GLFWwindow* window, int key, int scancode, int action, 
     }
 }
 
+float yaw = -90.0f;
+float pitch = 0.0f;
+glm::vec3 g_camera_front(0,0,-1.0f);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+    static float last_x = xpos;
+    static float last_y = ypos;
+
+    float xoffset = xpos - last_x;
+    float yoffset = last_y - ypos;
+    last_x = xpos;
+    last_y = ypos;
+
+    constexpr float sensitivity = 0.1f;
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+
+    if (pitch > 89.0f) {
+        pitch = 89.0f;
+    } else if (pitch < -89.0f) {
+        pitch = -89.0f;
+    }
+
+    yaw += xoffset;
+    pitch += yoffset;
+
+    glm::vec3 camera_dir(0,0,-1.0f);
+    camera_dir.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    camera_dir.y = sin(glm::radians(pitch));
+    camera_dir.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    g_camera_front = glm::normalize(camera_dir);
+
+}
+
 int main(void)
 {
     glfwInit();
@@ -68,6 +101,8 @@ int main(void)
     glViewport(0, 0, initial_window_width, initial_window_height);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetKeyCallback(window, key_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glEnable(GL_DEPTH_TEST);
 
     GLfloat vertices[] = {
@@ -171,19 +206,46 @@ int main(void)
         glm::vec3(-1.3f,  1.0f, -1.5f) 
     };
 
-    //glm::mat4 model = glm::mat4(1.0f);
-    glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -3.0f));
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)(initial_window_width) / (float)(initial_window_width), 0.1f, 100.0f);
 
+    glm::vec3 camera_pos = glm::vec3(0,0, 3.0f);
+
+    float delta_time = 0.0f;
+    float last_frame = 0.0f;
     while (!glfwWindowShouldClose(window)) {
         glClearColor(FLOAT_FROM_256(101), FLOAT_FROM_256(96), FLOAT_FROM_256(128), 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        float time_value = glfwGetTime();
-        float green_value = (std::sin(time_value) / 2.0f) + 0.5f;
+        float current_frame = glfwGetTime();
+        delta_time = current_frame - last_frame;
+        last_frame = current_frame;
+
+        glm::vec3 up(0, 1.0f, 0);
+        glm::vec3 camera_right = glm::normalize(glm::cross(g_camera_front, up));
+        glm::vec3 camera_up = glm::cross(camera_right, g_camera_front); // !!!
+
+
+        float camera_speed = 2.5f * delta_time;
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+            camera_pos += g_camera_front * camera_speed;
+        } else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+            camera_pos -= g_camera_front * camera_speed;
+        }
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+            camera_pos += camera_right * camera_speed;
+        } else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+            camera_pos -= camera_right * camera_speed;
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+            camera_pos += up * camera_speed;
+        } else if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+            camera_pos -= up * camera_speed;
+        }
 
         glUseProgram(shader.program);
 
+        glm::mat4 view = glm::lookAt(camera_pos, camera_pos + g_camera_front, glm::vec3(0,1.0f,0));
         glUniformMatrix4fv(glGetUniformLocation(shader.program, "view"),
                 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(shader.program, "projection"),
@@ -192,6 +254,7 @@ int main(void)
         glBindVertexArray(vao);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
+
         for (int i = 0; i < 10; ++i) {
             glm::mat4 model = glm::translate(glm::mat4(1.0f), cube_positions[i]);
             glUniformMatrix4fv(glGetUniformLocation(shader.program, "model"),
