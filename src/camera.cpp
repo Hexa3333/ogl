@@ -41,32 +41,32 @@ void Camera::push(CameraDirection cam_dir) {
     switch (cam_dir) {
         case Camera::CameraDirection::right:
         {
-            position += right * camera_speed;
+            position += right * camera_speed * DeltaTime::get();
             break;
         }
         case Camera::CameraDirection::left:
         {
-            position -= right * camera_speed;
+            position -= right * camera_speed * DeltaTime::get();
             break;
         }
         case Camera::CameraDirection::front:
         {
-            position += direction * camera_speed;
+            position += direction * camera_speed * DeltaTime::get();
             break;
         }
         case Camera::CameraDirection::back:
         {
-            position -= direction * camera_speed;
+            position -= direction * camera_speed * DeltaTime::get();
             break;
         }
         case Camera::CameraDirection::up:
         {
-            position += up * camera_speed;
+            position += up * camera_speed * DeltaTime::get();
             break;
         }
         case Camera::CameraDirection::down:
         {
-            position -= up * camera_speed;
+            position -= up * camera_speed * DeltaTime::get();
             break;
         }
     }
