@@ -8,8 +8,8 @@
 
 #include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/matrix_transform.hpp"
-#include "glm/geometric.hpp"
 #include "shader.hpp"
+#include "camera.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -47,7 +47,6 @@ void key_callback(struct GLFWwindow* window, int key, int scancode, int action, 
 
 float yaw = -90.0f;
 float pitch = 0.0f;
-glm::vec3 g_camera_front(0,0,-1.0f);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     static float last_x = xpos;
     static float last_y = ypos;
@@ -69,12 +68,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 
     yaw += xoffset;
     pitch += yoffset;
-
-    glm::vec3 camera_dir(0,0,-1.0f);
-    camera_dir.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    camera_dir.y = sin(glm::radians(pitch));
-    camera_dir.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    g_camera_front = glm::normalize(camera_dir);
 
 }
 
@@ -206,9 +199,8 @@ int main(void)
         glm::vec3(-1.3f,  1.0f, -1.5f) 
     };
 
+    Camera camera;
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)(initial_window_width) / (float)(initial_window_width), 0.1f, 100.0f);
-
-    glm::vec3 camera_pos = glm::vec3(0,0, 3.0f);
 
     float delta_time = 0.0f;
     float last_frame = 0.0f;
@@ -220,32 +212,26 @@ int main(void)
         delta_time = current_frame - last_frame;
         last_frame = current_frame;
 
-        glm::vec3 up(0, 1.0f, 0);
-        glm::vec3 camera_right = glm::normalize(glm::cross(g_camera_front, up));
-        glm::vec3 camera_up = glm::cross(camera_right, g_camera_front); // !!!
-
-
-        float camera_speed = 2.5f * delta_time;
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-            camera_pos += g_camera_front * camera_speed;
+            camera.push(Camera::CameraDirection::front);
         } else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-            camera_pos -= g_camera_front * camera_speed;
+            camera.push(Camera::CameraDirection::back);
         }
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-            camera_pos += camera_right * camera_speed;
+            camera.push(Camera::CameraDirection::right);
         } else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-            camera_pos -= camera_right * camera_speed;
+            camera.push(Camera::CameraDirection::left);
         }
 
         if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-            camera_pos += up * camera_speed;
+            camera.push(Camera::CameraDirection::up);
         } else if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-            camera_pos -= up * camera_speed;
+            camera.push(Camera::CameraDirection::down);
         }
+        camera.mouse_update(yaw, pitch);
 
         glUseProgram(shader.program);
-
-        glm::mat4 view = glm::lookAt(camera_pos, camera_pos + g_camera_front, glm::vec3(0,1.0f,0));
+        glm::mat4 view = glm::lookAt(camera.get_position(), camera.get_position() + camera.get_direction(), camera.get_up());
         glUniformMatrix4fv(glGetUniformLocation(shader.program, "view"),
                 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(shader.program, "projection"),
