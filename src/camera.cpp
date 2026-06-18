@@ -1,7 +1,7 @@
 #include "camera.hpp"
+#include "delta_time.hpp"
 
 #include <glm/glm.hpp>
-#include <iostream>
 
 Camera::Camera() {
     position = glm::vec3(0,0, 3);
@@ -34,7 +34,7 @@ void Camera::mouse_update(float yaw, float pitch) {
 }
 
 void Camera::push(glm::vec3 towards, float force) {
-    position += towards * force; // * deltatime
+    position += towards * force * DeltaTime::get(); // * deltatime
 }
 
 void Camera::push(CameraDirection cam_dir) {

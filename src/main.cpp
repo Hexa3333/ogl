@@ -10,6 +10,7 @@
 #include "glm/ext/matrix_transform.hpp"
 #include "shader.hpp"
 #include "camera.hpp"
+#include "delta_time.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -199,6 +200,7 @@ int main(void)
         glm::vec3(-1.3f,  1.0f, -1.5f) 
     };
 
+    DeltaTime::instantiate();
     Camera camera;
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)(initial_window_width) / (float)(initial_window_width), 0.1f, 100.0f);
 
@@ -208,9 +210,7 @@ int main(void)
         glClearColor(FLOAT_FROM_256(101), FLOAT_FROM_256(96), FLOAT_FROM_256(128), 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        float current_frame = glfwGetTime();
-        delta_time = current_frame - last_frame;
-        last_frame = current_frame;
+        DeltaTime::update(glfwGetTime());
 
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
             camera.push(Camera::CameraDirection::front);
