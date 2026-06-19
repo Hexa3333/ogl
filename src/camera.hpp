@@ -20,7 +20,7 @@ public:
     void push(CameraDirection direction);
 
 private:
-    float camera_speed = 0.2f;
+    float camera_speed = 2.5f;
     glm::vec3 position;
     glm::vec3 direction;
 
