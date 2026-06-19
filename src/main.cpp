@@ -159,6 +159,13 @@ int main(void)
 
     glBindVertexArray(0);
 
+    GLuint light_vao;
+    glGenVertexArrays(1, &light_vao);
+    glBindVertexArray(light_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
+    glEnableVertexAttribArray(0);
+
     Shader shader("shaders/main.vert", "shaders/main.frag");
 
     GLuint texture;
@@ -204,8 +211,13 @@ int main(void)
     Camera camera;
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)(initial_window_width) / (float)(initial_window_width), 0.1f, 100.0f);
 
-    float delta_time = 0.0f;
-    float last_frame = 0.0f;
+    glm::vec3 light_color(1.0f);
+    glm::vec3 toy_color(1.0f, 0.5f, 0.31f);
+    glm::vec3 result = light_color * toy_color;
+
+    Shader shader_light("shaders/light.vert", "shaders/light.frag");
+    glm::vec3 light_pos(1.2f, 1.0f, 2.0f);
+
     while (!glfwWindowShouldClose(window)) {
         glClearColor(FLOAT_FROM_256(101), FLOAT_FROM_256(96), FLOAT_FROM_256(128), 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -229,9 +241,30 @@ int main(void)
             camera.push(Camera::CameraDirection::down);
         }
         camera.mouse_update(yaw, pitch);
+        glm::mat4 view = glm::lookAt(camera.get_position(), camera.get_position() + camera.get_direction(), camera.get_up());
+
+        // Light
+        {
+            glUseProgram(shader_light.program);
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), light_pos);
+            model = glm::scale(model, glm::vec3(0.2f));
+            glUniformMatrix4fv(glGetUniformLocation(shader_light.program, "model"),
+                    1, GL_FALSE, glm::value_ptr(model));
+            glUniformMatrix4fv(glGetUniformLocation(shader_light.program, "view"),
+                    1, GL_FALSE, glm::value_ptr(view));
+            glUniformMatrix4fv(glGetUniformLocation(shader_light.program, "projection"),
+                    1, GL_FALSE, glm::value_ptr(projection));
+
+            glBindVertexArray(light_vao);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+
 
         glUseProgram(shader.program);
-        glm::mat4 view = glm::lookAt(camera.get_position(), camera.get_position() + camera.get_direction(), camera.get_up());
+        glUniform3f(glGetUniformLocation(shader.program, "light_color"),
+                light_color.x, light_color.y, light_color.z);
+        glUniform3f(glGetUniformLocation(shader.program, "object_color"),
+                toy_color.x, toy_color.y, toy_color.z);
         glUniformMatrix4fv(glGetUniformLocation(shader.program, "view"),
                 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(shader.program, "projection"),
