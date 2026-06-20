@@ -212,7 +212,7 @@ int main(void)
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)(initial_window_width) / (float)(initial_window_width), 0.1f, 100.0f);
 
     glm::vec3 light_color(1.0f);
-    glm::vec3 toy_color(1.0f, 0.5f, 0.31f);
+    glm::vec3 toy_color(1.0f, 1.0f, 1.0f);
     glm::vec3 result = light_color * toy_color;
 
     Shader shader_light("shaders/light.vert", "shaders/light.frag");
@@ -276,6 +276,10 @@ int main(void)
 
         glUniform3f(glGetUniformLocation(shader.program, "light_pos"),
                 light_pos.x, light_pos.y, light_pos.z);
+        glm::vec3 camera_pos = camera.get_position();
+        glUniform3f(glGetUniformLocation(shader.program, "view_pos"),
+                camera_pos.x, camera_pos.y, camera_pos.z);
+        
         for (int i = 0; i < 10; ++i) {
             glm::mat4 model = glm::translate(glm::mat4(1.0f), cube_positions[i]);
             glUniformMatrix4fv(glGetUniformLocation(shader.program, "model"),
