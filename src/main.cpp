@@ -261,10 +261,18 @@ int main(void)
 
 
         glUseProgram(shader.program);
-        glUniform3f(glGetUniformLocation(shader.program, "light_color"),
-                light_color.x, light_color.y, light_color.z);
-        glUniform3f(glGetUniformLocation(shader.program, "object_color"),
-                toy_color.x, toy_color.y, toy_color.z);
+        glUniform3f(glGetUniformLocation(shader.program, "material.ambient"),  1.0f, 0.5f, 0.31f);
+        glUniform3f(glGetUniformLocation(shader.program, "material.diffuse"),  1.0f, 0.5f, 0.31f);
+        glUniform3f(glGetUniformLocation(shader.program, "material.specular"), 1.0f, 0.5f, 0.31f);
+        glUniform1f(glGetUniformLocation(shader.program, "material.shininess"),  32.0f);
+
+        glUniform3f(glGetUniformLocation(shader.program, "light.ambient"),
+                    0.2f, 0.2f, 0.2f);
+        glUniform3f(glGetUniformLocation(shader.program, "light.diffuse"),
+                    0.5f, 0.5f, 0.5f);
+        glUniform3f(glGetUniformLocation(shader.program, "light.specular"),
+                    1.0f, 1.0f, 1.0f);
+
         glUniformMatrix4fv(glGetUniformLocation(shader.program, "view"),
                 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(shader.program, "projection"),
