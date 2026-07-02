@@ -302,6 +302,8 @@ int main(void)
         glUniform3f(glGetUniformLocation(shader.program, "material.specular"), 1.0f, 1.0f, 1.0f);
         glUniform1f(glGetUniformLocation(shader.program, "material.shininess"),  32.0f);
 
+        glUniform3f(glGetUniformLocation(shader.program, "light.direction"),
+                -light_pos.x, -light_pos.y, -light_pos.z);
         glUniform3f(glGetUniformLocation(shader.program, "light.ambient"),
                     0.2f, 0.2f, 0.2f);
         glUniform3f(glGetUniformLocation(shader.program, "light.diffuse"),
@@ -316,8 +318,6 @@ int main(void)
 
         glBindVertexArray(vao);
 
-        glUniform3f(glGetUniformLocation(shader.program, "light_pos"),
-                light_pos.x, light_pos.y, light_pos.z);
         glm::vec3 camera_pos = camera.get_position();
         glUniform3f(glGetUniformLocation(shader.program, "view_pos"),
                 camera_pos.x, camera_pos.y, camera_pos.z);
