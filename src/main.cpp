@@ -182,18 +182,47 @@ int main(void)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     stbi_set_flip_vertically_on_load(true);
-    int width, height, nrChannels;
-    unsigned char *data = stbi_load("textures/shinji.jpg", &width, &height, &nrChannels, 0);
-    if (!data) {
-        std::cerr << "stbi failed.\n";
-        return EXIT_FAILURE;
-    } else {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    stbi_image_free(data);
-    glBindTexture(GL_TEXTURE_2D, 0);
 
+    {
+        int width, height, nrChannels;
+        unsigned char *data = stbi_load("textures/container.png", &width, &height, &nrChannels, 0);
+        if (!data) {
+            std::cerr << "stbi failed.\n";
+            return EXIT_FAILURE;
+        } else {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+        }
+        stbi_image_free(data);
+    }
+
+    GLuint texture_specular;
+    glGenTextures(1, &texture_specular);
+    glBindTexture(GL_TEXTURE_2D, texture_specular);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    {
+        int width, height, nrChannels;
+        unsigned char *data = stbi_load("textures/container_specular.png", &width, &height, &nrChannels, 0);
+        if (!data) {
+            std::cerr << "stbi failed.\n";
+            return EXIT_FAILURE;
+        } else {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+        }
+        stbi_image_free(data);
+    }
+
+    
     glm::vec3 cube_positions[] = {
         glm::vec3( 0.0f,  0.0f,  0.0f), 
         glm::vec3( 2.0f,  5.0f, -15.0f), 
@@ -261,9 +290,16 @@ int main(void)
 
 
         glUseProgram(shader.program);
-        glUniform3f(glGetUniformLocation(shader.program, "material.ambient"),  1.0f, 0.5f, 0.31f);
-        glUniform3f(glGetUniformLocation(shader.program, "material.diffuse"),  1.0f, 0.5f, 0.31f);
-        glUniform3f(glGetUniformLocation(shader.program, "material.specular"), 1.0f, 0.5f, 0.31f);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, texture_specular);
+
+        glUniform1i(glGetUniformLocation(shader.program, "material.diffuse"),  0);
+        glUniform1i(glGetUniformLocation(shader.program, "material.specular"),  1);
+        glUniform3f(glGetUniformLocation(shader.program, "material.specular"), 1.0f, 1.0f, 1.0f);
         glUniform1f(glGetUniformLocation(shader.program, "material.shininess"),  32.0f);
 
         glUniform3f(glGetUniformLocation(shader.program, "light.ambient"),
@@ -279,8 +315,6 @@ int main(void)
                 1, GL_FALSE, glm::value_ptr(projection));
 
         glBindVertexArray(vao);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
 
         glUniform3f(glGetUniformLocation(shader.program, "light_pos"),
                 light_pos.x, light_pos.y, light_pos.z);
