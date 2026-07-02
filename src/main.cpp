@@ -211,7 +211,7 @@ int main(void)
 
     {
         int width, height, nrChannels;
-        unsigned char *data = stbi_load("textures/container_specular.png", &width, &height, &nrChannels, 0);
+        unsigned char *data = stbi_load("textures/container_specular_realistic.png", &width, &height, &nrChannels, 0);
         if (!data) {
             std::cerr << "stbi failed.\n";
             return EXIT_FAILURE;
@@ -222,6 +222,31 @@ int main(void)
         stbi_image_free(data);
     }
 
+    GLuint texture_blood;
+    glGenTextures(1, &texture_blood);
+    glBindTexture(GL_TEXTURE_2D, texture_blood);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    {
+        int width, height, nrChannels;
+        unsigned char *data = stbi_load("textures/container_blood.png", &width, &height, &nrChannels, 0);
+        if (!data) {
+            std::cerr << "stbi failed.\n";
+            return EXIT_FAILURE;
+        } else {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+        }
+        stbi_image_free(data);
+    }
     
     glm::vec3 cube_positions[] = {
         glm::vec3( 0.0f,  0.0f,  0.0f), 
@@ -298,6 +323,10 @@ int main(void)
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture_specular);
         glUniform1i(glGetUniformLocation(shader.program, "material.specular"),  1);
+
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, texture_blood);
+        glUniform1i(glGetUniformLocation(shader.program, "material.decal"), 2);
 
         glUniform3f(glGetUniformLocation(shader.program, "material.specular"), 1.0f, 1.0f, 1.0f);
         glUniform1f(glGetUniformLocation(shader.program, "material.shininess"),  32.0f);
