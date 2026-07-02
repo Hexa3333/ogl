@@ -293,12 +293,12 @@ int main(void)
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
+        glUniform1i(glGetUniformLocation(shader.program, "material.diffuse"),  0);
         
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture_specular);
-
-        glUniform1i(glGetUniformLocation(shader.program, "material.diffuse"),  0);
         glUniform1i(glGetUniformLocation(shader.program, "material.specular"),  1);
+
         glUniform3f(glGetUniformLocation(shader.program, "material.specular"), 1.0f, 1.0f, 1.0f);
         glUniform1f(glGetUniformLocation(shader.program, "material.shininess"),  32.0f);
 
@@ -310,6 +310,10 @@ int main(void)
                     0.5f, 0.5f, 0.5f);
         glUniform3f(glGetUniformLocation(shader.program, "light.specular"),
                     1.0f, 1.0f, 1.0f);
+
+        glUniform1f(glGetUniformLocation(shader.program, "light.constant"), 1.0f);
+        glUniform1f(glGetUniformLocation(shader.program, "light.linear"), 0.09f);
+        glUniform1f(glGetUniformLocation(shader.program, "light.qudratic"), 0.032f);
 
         glUniformMatrix4fv(glGetUniformLocation(shader.program, "view"),
                 1, GL_FALSE, glm::value_ptr(view));
